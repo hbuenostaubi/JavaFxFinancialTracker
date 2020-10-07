@@ -1,0 +1,12 @@
+    public String jsonDates(String txt) throws ParseException {
+        JSONParser parser = new JSONParser();
+        JSONObject response = (JSONObject) parser.parse(txt);
+        JSONObject mntly= (JSONObject) response.get("Monthly Time Series");
+        String filename="Dates \n";
+        for(Object key: mntly.keySet()){
+            String keyString=(String)key;
+            JSONObject dateString= (JSONObject) mntly.get(keyString);
+            filename+=keyString +"\n";   ///added a newline
+        }
+        return filename;
+    }
