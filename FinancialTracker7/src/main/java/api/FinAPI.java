@@ -17,11 +17,11 @@ import stockpkg.Stock;
 
 
 public class FinAPI {
-    private String urlString;
+    private final String urlString;
     private final String KEY = System.getenv("API-KEY");
     private String txt;
     private HttpURLConnection connection=null;
-    private List<StockDate> stockList;
+    private final List<StockDate> stockList;
 
     public FinAPI(String time, String symbol){
 
@@ -52,8 +52,7 @@ public class FinAPI {
         if(connection.getResponseCode()==200){
             System.out.println("Connected");
             final InputStream inputStream =connection.getInputStream();
-            final BufferedReader bufferedReader= new BufferedReader(new InputStreamReader(inputStream));
-            return bufferedReader;
+            return new BufferedReader(new InputStreamReader(inputStream));
         }else{
             System.out.println("Not Connected");
             return null;}
@@ -84,23 +83,28 @@ public class FinAPI {
     }
 
     public void iterMap(JSONObject mntly, Map<Stock, List<StockDate>> hMap) {
+//        mntly.keySet().forEach( Object ->);   this wouldn't work!
         for(Object key: mntly.keySet()){
             String keyString=(String)key;
-            JSONObject dateString= (JSONObject) mntly.get(keyString);
-            double open = Double.parseDouble((String) dateString.get("1. open"));
-            double high = Double.parseDouble((String) dateString.get("2. high"));
-            double low = Double.parseDouble((String) dateString.get("3. low"));
-            double close = Double.parseDouble((String) dateString.get("4. close"));
-            int volume = Integer.parseInt((String)dateString.get("5. volume"));
-
-            StockDate objTemp =new StockDate(keyString,open, high, low, close, volume);
-            stockList.add(objTemp);
-            for(Stock closeCategory: Stock.values()){
-                if(objTemp.getClose()>=closeCategory.getMin() && objTemp.getClose()<=closeCategory.getMax()){
+            StockDate objTemp = placeClasses(mntly, keyString, stockList);
+            Arrays.asList(Stock.values()).forEach(closeCategory -> {
+                if(objTemp.getClose()>=closeCategory.getMin() && objTemp.getClose()<=closeCategory.getMax())
                     addToMap(closeCategory, objTemp, hMap);
-                }
-            }
-        }
+            });
+        }   //end for loop  refactor->extract method  make sure it is static
+    }
+
+    private static StockDate placeClasses(JSONObject mntly, String keyString, List<StockDate> stockList) {
+        JSONObject dateString= (JSONObject) mntly.get(keyString);
+        double open = Double.parseDouble((String) dateString.get("1. open"));
+        double high = Double.parseDouble((String) dateString.get("2. high"));
+        double low = Double.parseDouble((String) dateString.get("3. low"));
+        double close = Double.parseDouble((String) dateString.get("4. close"));
+        int volume = Integer.parseInt((String)dateString.get("5. volume"));
+
+        StockDate objTemp =new StockDate(keyString,open, high, low, close, volume);
+        stockList.add(objTemp);
+        return objTemp;
     }
 
     public void addToMap(Stock key, StockDate obj1, Map<Stock, List<StockDate>> map){
@@ -117,8 +121,7 @@ public class FinAPI {
         this.setTxt(buff);
 
         String txt= this.getText();
-        Map<Stock, List<StockDate>> finData = this.stockParser(txt);
-        return finData;
+        return this.stockParser(txt);
     }
 
     public List<StockDate> getAllStocks(){

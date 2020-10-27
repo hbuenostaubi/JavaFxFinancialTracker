@@ -34,4 +34,4 @@ javafx {
     modules =['javafx.controls']
 }
 
-mainClassName = 'stockpkg.DisplayStockApp'
+mainClassName = 'DisplayStockApp'

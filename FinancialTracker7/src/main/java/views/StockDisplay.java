@@ -1,8 +1,6 @@
 package views;
 
 import api.FinAPI;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
@@ -11,7 +9,6 @@ import javafx.util.StringConverter;
 import stockpkg.Stock;
 import stockpkg.StockDate;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -61,27 +58,21 @@ public class StockDisplay {
         categories = new ComboBox<>();
         categories.getItems().addAll(sortClose());  //anonymous, nested class below for sorting close date
         categories.setPromptText("--Select a value--");
-        categories.valueProperty().addListener(new ChangeListener<Stock>() {
-            @Override
-            public void changed(ObservableValue<? extends Stock> observable, Stock oldValue, Stock newValue) {
-                textBox.setVisible(false);  //make visible after selection
-                stockWk.getItems().clear();
-                stockWk.getItems().addAll(stockMap.get(newValue));
-                stockWk.setVisible(true);
-            }
+        categories.valueProperty().addListener((observable, oldValue, newValue) -> {
+            textBox.setVisible(false);  //make visible after selection
+            stockWk.getItems().clear();
+            stockWk.getItems().addAll(stockMap.get(newValue));
+            stockWk.setVisible(true);
         });
     }
     private ObservableList<Stock> sortClose(){
-        return stocks.sorted(new Comparator<Stock>() {
-            @Override
-            public int compare(Stock o1, Stock o2) {
-                if(o1.getMin()<o2.getMin())
-                    return -1;
-                else if (o1.getMin()>o2.getMin())
-                    return 1;
-                else
-                    return 0;
-            }
+        return stocks.sorted((o1, o2) -> {
+            if(o1.getMin()<o2.getMin())
+                return -1;
+            else if (o1.getMin()>o2.getMin())
+                return 1;
+            else
+                return 0;
         });
 
     }
@@ -109,17 +100,14 @@ public class StockDisplay {
         });
     }
     private void createDateSelectorListener(){
-        stockWk.valueProperty().addListener(new ChangeListener<StockDate>() {
-            @Override
-            public void changed(ObservableValue<? extends StockDate> observable, StockDate oldValue, StockDate newValue) {
-                if(newValue!=null){
-                    String txt = newValue.getDate() + "\n" +
-                            "Volume: " +newValue.getVolume() +"\n"+
-                            "Opening Price: " + newValue.getOpen() +"\n"
-                            +"High Price: " +newValue.getHigh();
-                    textBox.setText(txt);
-                    textBox.setVisible(true);
-                }
+        stockWk.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue!=null){
+                String txt = newValue.getDate() + "\n" +
+                        "Volume: " +newValue.getVolume() +"\n"+
+                        "Opening Price: " + newValue.getOpen() +"\n"
+                        +"High Price: " +newValue.getHigh();
+                textBox.setText(txt);
+                textBox.setVisible(true);
             }
         });
     }
