@@ -11,14 +11,15 @@ import stockpkg.StockDate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static javafx.collections.FXCollections.observableArrayList;
 
 public class StockDisplay {
     private ComboBox<Stock> categories;
-    private ComboBox<StockDate> stockWk;
+    private ComboBox<StockDate> stockClose;
     private Text textBox;
-    private final Map<Stock, List<StockDate>> stockMap;
+    private Map<Stock, List<StockDate>> stockMap;
     private final ObservableList<Stock> stocks;
     private final List<StockDate> stockDates;
 
@@ -45,12 +46,12 @@ public class StockDisplay {
 
         @Override
         public StockDate fromString(String string) {
-            String date = string.split(SEP)[0];
-            for (StockDate date2: stockDates){
-                if(date2.getDate().equals(date))
-                    return date2;
-            }
-             return null;
+            String dateLocate = string.split(SEP)[0];
+            List<StockDate> listStockDates = stockDates.stream()
+                    .filter(date -> date.getDate().equals(dateLocate))
+                    .limit(1)
+                    .collect(Collectors.toList());
+            return listStockDates.isEmpty() ? null : listStockDates.get(0);
         }
     }
 
@@ -60,9 +61,9 @@ public class StockDisplay {
         categories.setPromptText("--Select a value--");
         categories.valueProperty().addListener((observable, oldValue, newValue) -> {
             textBox.setVisible(false);  //make visible after selection
-            stockWk.getItems().clear();
-            stockWk.getItems().addAll(stockMap.get(newValue));
-            stockWk.setVisible(true);
+            stockClose.getItems().clear();
+            stockClose.getItems().addAll(stockMap.get(newValue));
+            stockClose.setVisible(true);
         });
     }
     private ObservableList<Stock> sortClose(){
@@ -77,16 +78,16 @@ public class StockDisplay {
 
     }
     private void setUpStockWk(){
-        stockWk = new ComboBox<>();
-        stockWk.setPromptText("--Select a value--");
-        stockWk.setConverter(new StockDateConverter());
-        stockWk.setVisible(false);
+        stockClose = new ComboBox<>();
+        stockClose.setPromptText("--Select a value--");
+        stockClose.setConverter(new StockDateConverter());
+        stockClose.setVisible(false);
         createDateSelectorListener();
         handleStockDateComboUpdate();
     }
 
     private void handleStockDateComboUpdate(){
-        stockWk.setButtonCell(new ListCell<>(){
+        stockClose.setButtonCell(new ListCell<>(){
             @Override
             protected void updateItem(StockDate obj, boolean ckr){
                 super.updateItem(obj, ckr);
@@ -100,7 +101,7 @@ public class StockDisplay {
         });
     }
     private void createDateSelectorListener(){
-        stockWk.valueProperty().addListener((observable, oldValue, newValue) -> {
+        stockClose.valueProperty().addListener((observable, oldValue, newValue) -> {
             if(newValue!=null){
                 String txt = newValue.getDate() + "\n" +
                         "Volume: " +newValue.getVolume() +"\n"+
@@ -112,12 +113,48 @@ public class StockDisplay {
         });
     }
 
+    public double getCount(String stockVal){
+        if(stockVal.equals("LOWEST"))
+            return this.stockMap.get(Stock.LOWEST).size();
+        else if(stockVal.equals("LOW"))
+            return this.stockMap.get(Stock.LOW).size();
+        else if(stockVal.equals("MID"))
+            return this.stockMap.get(Stock.MID).size();
+        else if(stockVal.equals("HIGH"))
+            return this.stockMap.get(Stock.HIGH).size();
+        else
+            return 0;
+        }
+
+    public double getVolumeTrades(String stockVal){
+        if(stockVal.equals("LOWEST"))
+            return getReduce(Stock.LOWEST);
+        else if(stockVal.equals("LOW"))
+            return getReduce(Stock.LOW);
+        else if(stockVal.equals("MID"))
+            return getReduce(Stock.MID);
+        else if(stockVal.equals("HIGH"))
+            return getReduce(Stock.HIGH);
+        else
+            return 0;
+    }
+
+    private Integer getReduce(Object obj) {
+        return this.stockMap.get(obj).stream()
+                .map(n -> {
+                    System.out.println(n.getVolume() / 100);
+                    return n.getVolume() / 100;
+                })
+                .reduce(0, (a, b) -> a + b);
+    }
+
+
     public ComboBox<Stock> getCategories() {
         return categories;
     }
 
-    public ComboBox<StockDate> getStockWk() {
-        return stockWk;
+    public ComboBox<StockDate> getStockClose() {
+        return stockClose;
     }
 
     public Text getTextBox() {

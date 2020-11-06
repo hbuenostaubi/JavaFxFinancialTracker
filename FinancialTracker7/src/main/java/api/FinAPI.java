@@ -1,42 +1,43 @@
 package api;
 
-import java.lang.Double;
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import org.json.JSONObject;
+import stockpkg.Stock;
+import stockpkg.StockDate;
 
 import javax.ws.rs.HttpMethod;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import java.lang.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
-
-import org.json.simple.parser.ParseException;
-import stockpkg.StockDate;
-import stockpkg.Stock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class FinAPI {
     private final String urlString;
     private final String KEY = System.getenv("API-KEY");
-    private String txt;
+    private JSONObject jsonIpo;
     private HttpURLConnection connection=null;
     private final List<StockDate> stockList;
+    private final String series;
+
 
     public FinAPI(String time, String symbol){
-
+        this.series=(time.equals("weekly")) ? "Weekly Time Series" : "Monthly Time Series";
         this.urlString="https://www.alphavantage.co/query?"+
                 getSeries(time)+"&symbol="+symbol+
                 "&apikey="+KEY;
         this.stockList=new ArrayList<>();
     }
-    public void setTxt(BufferedReader buff) throws Exception{
-        String line;
-        StringBuilder whole= new StringBuilder();
-        while(((line = buff.readLine()) != null)){
-            whole.append(line.strip());
-        }
-        this.txt=whole.toString();
+    public void setTxt(BufferedReader buff){
+        Stream<String> lines = buff.lines();
+        String temp= lines.map(Object::toString)
+                .collect(Collectors.joining());
+
+        this.jsonIpo=new JSONObject(temp).getJSONObject(this.series);
     }
 
     private String getSeries(String time){
@@ -66,36 +67,30 @@ public class FinAPI {
         connection.setRequestMethod(HttpMethod.GET);
     }
 
-    public String getText(){
-        return this.txt;
+    public JSONObject getJsonIpo(){
+        return this.jsonIpo;
     }
 
 
-    public Map<Stock, List<StockDate>> stockParser(String txt)  throws ParseException{  ///return type fixed?
-        JSONParser parser = new JSONParser();
-        JSONObject response = (JSONObject) parser.parse(txt);
-        JSONObject mntly= (JSONObject) response.get("Monthly Time Series");
-
+    public Map<Stock, List<StockDate>> stockParser() {  ///return type fixed?
         Map<Stock, List<StockDate>> hMap = new HashMap<>();
-        iterMap(mntly, hMap);
+        iterMap(this.getJsonIpo(), hMap);
 
         return hMap;
     }
 
-    public void iterMap(JSONObject mntly, Map<Stock, List<StockDate>> hMap) {
-//        mntly.keySet().forEach( Object ->);   this wouldn't work!
-        for(Object key: mntly.keySet()){
-            String keyString=(String)key;
-            StockDate objTemp = placeClasses(mntly, keyString, stockList);
+    public void iterMap(JSONObject jObj, Map<Stock, List<StockDate>> hMap) {
+        jObj.keySet().forEach( key ->{
+            StockDate objTemp = placeClasses(jObj, key, stockList);
             Arrays.asList(Stock.values()).forEach(closeCategory -> {
                 if(objTemp.getClose()>=closeCategory.getMin() && objTemp.getClose()<=closeCategory.getMax())
                     addToMap(closeCategory, objTemp, hMap);
             });
-        }   //end for loop  refactor->extract method  make sure it is static
+        });
     }
 
-    private static StockDate placeClasses(JSONObject mntly, String keyString, List<StockDate> stockList) {
-        JSONObject dateString= (JSONObject) mntly.get(keyString);
+    private static StockDate placeClasses(JSONObject jObj, String keyString, List<StockDate> stockList) {
+        JSONObject dateString= (JSONObject) jObj.get(keyString);
         double open = Double.parseDouble((String) dateString.get("1. open"));
         double high = Double.parseDouble((String) dateString.get("2. high"));
         double low = Double.parseDouble((String) dateString.get("3. low"));
@@ -117,11 +112,8 @@ public class FinAPI {
 
     public Map<Stock, List<StockDate>> getAPI() throws Exception {   //getValues
         BufferedReader buff=this.getConnection();
-
         this.setTxt(buff);
-
-        String txt= this.getText();
-        return this.stockParser(txt);
+        return this.stockParser();
     }
 
     public List<StockDate> getAllStocks(){

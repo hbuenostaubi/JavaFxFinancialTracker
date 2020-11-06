@@ -26,7 +26,8 @@ dependencies {
     implementation "org.mockito:mockito-core:3.5.7"
     implementation "org.mockito:mockito-junit-jupiter:3.5.7"
     implementation "javax.ws.rs:javax.ws.rs-api:2.1.1"
-    implementation "com.googlecode.json-simple:json-simple:1.1.1"
+//    implementation "com.googlecode.json-simple:json-simple:1.1.1"   // <<deprecated
+    implementation "org.json:json:20200518"
 }
 
 
