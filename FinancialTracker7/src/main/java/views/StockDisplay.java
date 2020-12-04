@@ -9,6 +9,7 @@ import javafx.util.StringConverter;
 import stockpkg.Stock;
 import stockpkg.StockDate;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -142,8 +143,7 @@ public class StockDisplay {
     private Integer getReduce(Object obj) {
         return this.stockMap.get(obj).stream()
                 .map(n -> {
-                    System.out.println(n.getVolume() / 100);
-                    return n.getVolume() / 100;
+                    return n.getVolume() / 1000;
                 })
                 .reduce(0, (a, b) -> a + b);
     }
@@ -159,5 +159,14 @@ public class StockDisplay {
 
     public Text getTextBox() {
         return textBox;
+    }
+
+    public Map<LocalDate, Double> getStockMap(){
+        return this.stockDates
+                .stream()
+                .collect(Collectors.toMap(
+                        n -> LocalDate.parse(n.getDate()),
+                        n-> n.getClose()
+                ));
     }
 }
