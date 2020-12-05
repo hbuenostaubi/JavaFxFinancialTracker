@@ -1,6 +1,5 @@
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
@@ -48,35 +47,26 @@ public class DisplayStockApp extends Application {
         VBox paneForRadioButtons = new VBox(20);
         paneForRadioButtons.setPadding(new Insets(5, 5,5,5));
         ToggleGroup group = new ToggleGroup();
+
         RadioButton button1 = new RadioButton("Data Split");
-        button1.setToggleGroup(group);
-        button1.setSelected(true);
         RadioButton button2 = new RadioButton("Charts");
-        button2.setToggleGroup(group);
+        createButtonG1(group, button1, button2);
         paneForRadioButtons.getChildren().addAll(button1,button2);
         pane.setLeft(paneForRadioButtons);
 
         VBox paneForRadioButtons2 = new VBox(20);
         paneForRadioButtons2.setPadding(new Insets(5, 5,5,5));
-        ToggleGroup group1 = new ToggleGroup();
-        RadioButton button3 = new RadioButton("Data Split");
-        button3.setToggleGroup(group1);
-        RadioButton button4 = new RadioButton("Charts");
-        button4.setToggleGroup(group1);
-        button4.setSelected(true);
-        paneForRadioButtons2.getChildren().addAll(button3,button4);
-
         VBox paneForRadioButtons3 = new VBox(20);
         paneForRadioButtons3.setPadding(new Insets(5, 5,5,5));
+        ToggleGroup group1 = new ToggleGroup();
         ToggleGroup group2 = new ToggleGroup();
+        RadioButton button3 = new RadioButton("Data Split");
+        RadioButton button4 = new RadioButton("Charts");
         RadioButton button5 = new RadioButton("Count of dates");
-        button5.setToggleGroup(group2);
         RadioButton button6 = new RadioButton("Total Trades");
-        button6.setToggleGroup(group2);
         RadioButton button7 = new RadioButton("Time Series");
-        button7.setToggleGroup(group2);
-        button5.setSelected(true);
-        paneForRadioButtons3.getChildren().addAll(button5,button6,button7);
+        createButtonG2(paneForRadioButtons2, paneForRadioButtons3, group1, group2, button3,
+                button4, button5, button6, button7);
 
         //Bar Chart-----
         BorderPane pane2 = new BorderPane();
@@ -84,24 +74,13 @@ public class DisplayStockApp extends Application {
         final NumberAxis yAxis = new NumberAxis();
         BarChart<String, Number> bc =
                 new BarChart<>(xAxis, yAxis);
-        xAxis.setLabel("Value");
-        yAxis.setLabel("Data Points");
         XYChart.Series series1 = new XYChart.Series();
-        series1.setName("Frequecy");
-        series1.getData().add(new XYChart.Data(Lowest, boxDisplay.getCount("LOWEST")));
-        series1.getData().add(new XYChart.Data(Low, boxDisplay.getCount("LOW")));
-        series1.getData().add(new XYChart.Data(Mid, boxDisplay.getCount("MID")));
-        series1.getData().add(new XYChart.Data(High, boxDisplay.getCount("HIGH")));
-        bc.setTitle("Stock Distribution of Closing Date");
-        xAxis.setLabel("Value");
+        bChart1(xAxis, yAxis, bc, series1);
 
 
         XYChart.Series series2 = new XYChart.Series();
         series2.setName("Total Trades (scaled down)");
-        series2.getData().add(new XYChart.Data(Lowest, boxDisplay.getVolumeTrades("LOWEST")));
-        series2.getData().add(new XYChart.Data(Low, boxDisplay.getVolumeTrades("LOW")));
-        series2.getData().add(new XYChart.Data(Mid, boxDisplay.getVolumeTrades("MID")));
-        series2.getData().add(new XYChart.Data(High, boxDisplay.getVolumeTrades("HIGH")));
+        bChart2(series2);
 
 
         final CategoryAxis xAxis2 = new CategoryAxis();
@@ -109,18 +88,8 @@ public class DisplayStockApp extends Application {
 
         final LineChart<String, Number> lineChart =
                 new LineChart<String, Number>(xAxis2, yAxis2);
-
-        lineChart.setTitle("Stock Time Series");
-
         XYChart.Series series3 = new XYChart.Series();
-
-        seriesClose.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                .forEach(n ->{
-            series3.getData().add(new XYChart.Data(n.getKey().toString(), n.getValue()));
-        });
-        series3.setName("Close Price");
-        yAxis2.setLabel("Stock Price");
-        lineChart.getData().addAll(series3);
+        reduceLineChart(seriesClose, yAxis2, lineChart, series3);
 
         ///setting a pane for bar chart
         bc.getData().addAll(series1);
@@ -130,6 +99,15 @@ public class DisplayStockApp extends Application {
         scene1 = new Scene(pane2, 800, 600);
 
         ///button data page and button2 barchart
+        actionButtons(scene, button1, button2, button3, button4, button5, button6, button7, pane2, yAxis, bc, series1, series2, lineChart);
+
+        stage.setTitle("Facebook Financial Tracker");
+        stage.setScene(scene);
+        stage.show();
+
+    }
+
+    private void actionButtons(Scene scene, RadioButton button1, RadioButton button2, RadioButton button3, RadioButton button4, RadioButton button5, RadioButton button6, RadioButton button7, BorderPane pane2, NumberAxis yAxis, BarChart<String, Number> bc, XYChart.Series series1, XYChart.Series series2, LineChart<String, Number> lineChart) {
         button1.setOnAction(e->{
             if(button1.isSelected()){
                 stage.setScene(scene);
@@ -174,11 +152,55 @@ public class DisplayStockApp extends Application {
             if(button7.isSelected()){
                 pane2.setCenter(lineChart);
             }});
+    }
 
-        stage.setTitle("Facebook Financial Tracker");
-        stage.setScene(scene);
-        stage.show();
+    private void reduceLineChart(Map<LocalDate, Double> seriesClose, NumberAxis yAxis2, LineChart<String, Number> lineChart, XYChart.Series series3) {
+        lineChart.setTitle("Stock Time Series");
 
+        seriesClose.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .forEach(n ->{
+                    series3.getData().add(new XYChart.Data(n.getKey().toString(), n.getValue()));
+                });
+        series3.setName("Close Price");
+        yAxis2.setLabel("Stock Price");
+        lineChart.getData().addAll(series3);
+    }
+
+    private void bChart2(XYChart.Series series2) {
+        series2.getData().add(new XYChart.Data(Lowest, boxDisplay.getVolumeTrades("LOWEST")));
+        series2.getData().add(new XYChart.Data(Low, boxDisplay.getVolumeTrades("LOW")));
+        series2.getData().add(new XYChart.Data(Mid, boxDisplay.getVolumeTrades("MID")));
+        series2.getData().add(new XYChart.Data(High, boxDisplay.getVolumeTrades("HIGH")));
+    }
+
+    private void bChart1(CategoryAxis xAxis, NumberAxis yAxis, BarChart<String, Number> bc, XYChart.Series series1) {
+        xAxis.setLabel("Value");
+        yAxis.setLabel("Data Points");
+        series1.setName("Frequecy");
+        series1.getData().add(new XYChart.Data(Lowest, boxDisplay.getCount("LOWEST")));
+        series1.getData().add(new XYChart.Data(Low, boxDisplay.getCount("LOW")));
+        series1.getData().add(new XYChart.Data(Mid, boxDisplay.getCount("MID")));
+        series1.getData().add(new XYChart.Data(High, boxDisplay.getCount("HIGH")));
+        bc.setTitle("Stock Distribution of Closing Date");
+        xAxis.setLabel("Value");
+    }
+
+    private void createButtonG2(VBox paneForRadioButtons2, VBox paneForRadioButtons3, ToggleGroup group1, ToggleGroup group2, RadioButton button3, RadioButton button4, RadioButton button5, RadioButton button6, RadioButton button7) {
+        button3.setToggleGroup(group1);
+        button4.setToggleGroup(group1);
+        button4.setSelected(true);
+        button5.setToggleGroup(group2);
+        button6.setToggleGroup(group2);
+        button7.setToggleGroup(group2);
+        button5.setSelected(true);
+        paneForRadioButtons2.getChildren().addAll(button3, button4);
+        paneForRadioButtons3.getChildren().addAll(button5, button6, button7);
+    }
+
+    private void createButtonG1(ToggleGroup group, RadioButton button1, RadioButton button2) {
+        button1.setToggleGroup(group);
+        button1.setSelected(true);
+        button2.setToggleGroup(group);
     }
 
     private void setUpBorder(BorderPane border){
